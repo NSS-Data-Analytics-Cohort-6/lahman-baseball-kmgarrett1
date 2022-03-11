@@ -486,7 +486,7 @@ GROUP BY
 	c.yearid
 ORDER BY c.career_high DESC; */
 
-/* Phil's Code */
+/* Phil's Code to look at why we have different answers*/
 /*with homers as(
 	select playerid,
 	max(hr) as twentysixteenhr

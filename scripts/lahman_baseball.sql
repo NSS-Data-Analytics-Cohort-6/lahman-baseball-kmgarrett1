@@ -82,8 +82,8 @@ Answer:
 /*5. Find the average number of strikeouts per game by decade since 1920. Round the numbers you report to 2 decimal places. Do the same for home runs per game. Do you see any trends?
 
 SELECT 
-	ROUND(AVG(so),2),
-	ROUND(AVG(hr),2),
+	ROUND(AVG(so),2)/SUM(g),
+	ROUND(AVG(hr),2)/SUM(g),
 	CASE WHEN yearid BETWEEN 1920 AND 1929 THEN '1920s'
 		 WHEN yearid BETWEEN 1930 AND 1939 THEN '1930s'
 		 WHEN yearid BETWEEN 1940 AND 1949 THEN '1940s'
@@ -103,7 +103,18 @@ GROUP BY
 ORDER BY 
 	decade;
 
-Answer: The average are increasing, with a sharp rise between the 1950s and 1960s, possibly due to racial integration and again in the 90s/2000s possibly due to an increase in steroid use.*/
+/*Answer: 
+0.01759230706808407044	0.00250912927046985312	"1920s"
+0.02073227195191292340	0.00341198927788156933	"1930s"
+0.02218851001939237233	0.00327205882352941176	"1940s"
+0.02749272668498464522	0.00526830450945530952	"1950s"
+0.02886410625900632792	0.00414040473654532924	"1960s"
+0.02090831061294557205	0.00303165707361405635	"1970s"
+0.02062816541279441412	0.00311501204700791661	"1980s"
+0.02211679170139853663	0.00344401222561822729	"1990s"
+0.02187003416903379853	0.00357807418385410234	"2000s"
+0.03581143058740518610	0.00468512965249603105	"2010s"
+The average are increasing, with a sharp rise between the 1950s and 1960s, possibly due to racial integration and again in the 90s/2000s possibly due to an increase in steroid use.*/
 
 /*6. Find the player who had the most success stealing bases in 2016, where success is measured as the percentage of stolen base attempts which are successful. (A stolen base attempt results either in a stolen base or being caught stealing.) Consider only players who attempted at least 20 stolen bases.*/
 
@@ -171,113 +182,112 @@ GROUP BY
 	t.yearid
 ORDER BY t.w ASC;*/
 
-/* 7C. MLB Strike in 1981 , excluding 1981 is "an Francisco Giants	2010	92*/
+/* 7C. MLB Strike in 1981 , excluding 1981 is "St. Louis Cardinals"	2006	83	*/
 /*SELECT
 	t.name,
 	t.yearid,
 	t.w AS Wins,
 	t.WSWin AS World_Series_WIN
 FROM teams AS t
-WHERE t.yearid BETWEEN 1970 AND 1980 
-	OR t.yearid BETWEEN 1982 AND 2016
-	AND t.WSWin = 'Y'
+WHERE t.yearid BETWEEN 1970 AND 1980 OR t.yearid BETWEEN 1982 AND 2016
 GROUP BY 
 	t.w,
 	t.WSWin,
 	t.name,
 	t.yearid
-ORDER BY t.WSWin DESC; */
+HAVING t.WSWin = 'Y'
+ORDER BY t.WSWin ASC;
+*/
 
-/* 7D. STILL NEED TO DO */
+/* 7D. 23% */
 
-/*WITH cte AS 
+/* From Abigail */
+/* WITH t AS 
 	(SELECT 
 		t.yearid,
 		t.name,
 		t.w,
 		t.wswin
 	FROM teams AS t
+
 INNER JOIN 
 	(SELECT
 		yearid,
-		MAX(w) AS w
+		MAX(w) AS max_wins
 	FROM teams AS t2
 	GROUP BY yearid
 	ORDER BY yearid) AS t3
 ON t.yearid = t3.yearid
-AND t.w = t.w
-WHERE t1.yearid BETWEEN 1970 AND 2016)
+AND t.w = t3.max_wins
+WHERE t.yearid BETWEEN 1970 AND 2016)
 SELECT AVG(CASE WHEN wswin = 'Y' THEN 1
 			WHEN wswin= 'N' THEN 0 END) AS avg
-			FROM cte; */
-/*
-SELECT
-	t.name,
-	t.yearid,
-	t.w AS Wins,
-	t.WSWin AS World_Series_WIN
-FROM teams AS t
-WHERE t.yearid BETWEEN 1970 AND 1980 
-	OR t.yearid BETWEEN 1982 AND 2016
-	AND t.WSWin = 'Y'
-GROUP BY 
-	t.w,
-	t.WSWin,
-	t.name,
-	t.yearid
-ORDER BY t.WSWin DESC; */
+			FROM t; */
+
 
 /*8. Using the attendance figures from the homegames table, find the teams and parks which had the top 5 average attendance per game in 2016 (where average attendance is defined as total attendance divided by number of games). Only consider parks where there were at least 10 games played. Report the park name, team name, and average attendance. Repeat for the lowest 5 average attendance.*/ 
 
 /* 8A. Answer:
-"LAN"	"LOS03"		45719
-"SLN"	"STL10"		42524
-"TOR"	"TOR02"		41877
-"SFN"	"SFO03"		41546
-"CHN"	"CHI11"		39906
-SELECT 
+"Dodger Stadium"	"Los Angeles Dodgers"	45719
+"Busch Stadium III"	"St. Louis Cardinals"	42524
+"Rogers Centre"	"Toronto Blue Jays"			41877
+"AT&T Park"	"San Francisco Giants"			41546
+"Wrigley Field"	"Chicago Cubs"	  			39906 */
+/* SELECT 
+	p.park_name,
+	t.name,
 	hg.year,
-	hg.team,
-	hg.park,
 	hg.games,
 	hg.attendance,
-	hg.attendance/hg.games AS avg_attendance
+	(hg.attendance/hg.games )AS avg_attendance
 FROM homegames AS hg
-WHERE hg.year = 2016
+INNER JOIN parks AS p
+ON hg.park = p.park
+INNER JOIN teams AS t
+ON hg.team = t.teamid
+WHERE hg.year = '2016'
+	AND t.yearid = '2016'
 	AND hg.games > 10
 GROUP BY 
-	hg.year,
 	hg.team,
-	hg.park,
+	hg.year,
 	hg.games,
+	p.park_name,
+	t.name,
 	hg.attendance
 ORDER BY 
 	avg_attendance DESC; */
 
 /* 8B. Answer: 
-"TBA"	"STP01"		15878
-"OAK"	"OAK01"		18784
-"CLE"	"CLE08"		19650
-"MIA"	"MIA02"		21405
-"CHA"	"CHI12"		21559 */
-/* SELECT 
+"Tropicana Field"					"Tampa Bay Rays"		15878
+"Oakland-Alameda County Coliseum"	"Oakland Athletics"		18784
+"Progressive Field"					"Cleveland Indians"		19650
+"Marlins Park"						"Miami Marlins"	2		21405
+"U.S. Cellular Field"				"Chicago White Sox"	2	21559 */
+/*SELECT 
+	p.park_name,
+	t.name,
 	hg.year,
-	hg.team,
-	hg.park,
 	hg.games,
 	hg.attendance,
-	hg.attendance/hg.games AS avg_attendance
+	(hg.attendance/hg.games )AS avg_attendance
 FROM homegames AS hg
-WHERE hg.year = 2016
+INNER JOIN parks AS p
+ON hg.park = p.park
+INNER JOIN teams AS t
+ON hg.team = t.teamid
+WHERE hg.year = '2016'
+	AND t.yearid = '2016'
 	AND hg.games > 10
 GROUP BY 
-	hg.year,
 	hg.team,
-	hg.park,
+	hg.year,
 	hg.games,
+	p.park_name,
+	t.name,
 	hg.attendance
 ORDER BY 
-	avg_attendance ASC; */
+	avg_attendance ASC;  */
 
 
 /*9. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.*/
@@ -309,30 +319,64 @@ INNER JOIN L2
 ON L1.playerid = L2.playerid
 INNER JOIN people AS p
 ON L1.playerid = p.playerid
-LEFT JOIN managers as M
-ON m.playerid = p.playerid AND 
+INNER JOIN managers as M
+ON m.playerid = p.playerid  
 WHERE L1.awardid = 'TSN Manager of the Year'
 AND L2.awardid = 'TSN Manager of the Year'; */
 
 /*10. Find all players who hit their career highest number of home runs in 2016. Consider only players who have played in the league for at least 10 years, and who hit at least one home run in 2016. Report the players' first and last names and the number of home runs they hit in 2016.*/
 
+/*WITH a AS
+	(SELECT 
+		b.playerid,
+		COUNT (b.yearid) AS years
+	FROM batting AS b
+	GROUP BY b.playerid
+	HAVING COUNT(b.yearid)>10),
+
+c AS
+	(SELECT
+		b.playerid,
+	 	b.yearid,
+	 	b.hr,
+		MAX(b.hr) AS career_high
+	  FROM batting AS b
+	  WHERE b.yearid = '2016'
+	  GROUP BY 
+	 	b.playerid,
+		b.yearid,
+	 	b.hr
+	   HAVING b.hr = MAX(b.hr))
+
 SELECT
-	b.playerid,
+ 	a.playerid,
+	a.years,
 	b.hr,
+	c.career_high,
 	p.namefirst,
 	p.namelast,
 	b.yearid,
-	COUNT(DISTINCT b.yearid) AS years
+	c.yearid
 FROM batting AS b
 INNER JOIN people AS p
 ON b.playerid = p.playerid
+INNER JOIN a
+ON a.playerid = p.playerid
+INNER JOIN c
+ON a.playerid = c.playerid
 WHERE b.yearid = 2016
-HAVING years > 10
+	AND b.yearid = c.yearid
+	AND b.hr >= 1
 GROUP BY 
-	b.playerid,
+	a.playerid,
+	a.years,
 	b.hr,
+	c.career_high,
 	p.namefirst,
 	p.namelast,
-	b.yearid
-;
-	
+	b.yearid,
+	c.yearid
+ORDER BY c.career_high DESC; */
+
+/* 2nd attempt */
+

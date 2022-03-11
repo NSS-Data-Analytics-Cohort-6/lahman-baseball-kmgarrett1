@@ -79,9 +79,9 @@ Answer:
 41424	"Battery"
 58934	"Infield" */
 
-/*5. Find the average number of strikeouts per game by decade since 1920. Round the numbers you report to 2 decimal places. Do the same for home runs per game. Do you see any trends?
+/*5. Find the average number of strikeouts per game by decade since 1920. Round the numbers you report to 2 decimal places. Do the same for home runs per game. Do you see any trends?*/
 
-SELECT 
+/*SELECT 
 	ROUND(AVG(so),2)/SUM(g),
 	ROUND(AVG(hr),2)/SUM(g),
 	CASE WHEN yearid BETWEEN 1920 AND 1929 THEN '1920s'
@@ -94,14 +94,14 @@ SELECT
 		 WHEN yearid BETWEEN 1990 AND 1999 THEN '1990s'
 		 WHEN yearid BETWEEN 2000 AND 2009 THEN '2000s'
 		 WHEN yearid BETWEEN 2010 AND 2019 THEN '2010s' 
-		 END AS decade
+		 END AS decade 
 /* Alternative: CONCAT(LEFT(CAST(yearid AS text), 3), '0s') AS decade */
 FROM teams
 WHERE yearid >= 1920
 GROUP BY 
 	decade
 ORDER BY 
-	decade;
+	decade;*/
 
 /*Answer: 
 0.01759230706808407044	0.00250912927046985312	"1920s"
@@ -230,9 +230,10 @@ SELECT AVG(CASE WHEN wswin = 'Y' THEN 1
 /* 8A. Answer:
 "Dodger Stadium"	"Los Angeles Dodgers"	45719
 "Busch Stadium III"	"St. Louis Cardinals"	42524
-"Rogers Centre"	"Toronto Blue Jays"			41877
-"AT&T Park"	"San Francisco Giants"			41546
-"Wrigley Field"	"Chicago Cubs"	  			39906 */
+"Rogers Centre"		"Toronto Blue Jays"		41877
+"AT&T Park"			"San Francisco Giants"	41546
+"Wrigley Field"		"Chicago Cubs"	  		39906 */
+
 /* SELECT 
 	p.park_name,
 	t.name,
@@ -379,4 +380,132 @@ GROUP BY
 ORDER BY c.career_high DESC; */
 
 /* 2nd attempt */
+/*WITH a AS
+	(SELECT 
+		b.playerid,
+		COUNT (b.yearid) AS years
+	FROM batting AS b
+	GROUP BY b.playerid
+	HAVING COUNT(b.yearid)>10),
 
+c AS
+	(SELECT
+	 	b.playerid,
+		b.yearid,
+	 	b.hr,
+		MAX(b.hr) OVER(PARTITION BY b.playerid) AS career_high
+	  FROM batting AS b
+	  WHERE b.yearid = '2016'
+	  GROUP BY 
+	 	b.playerid,
+		b.yearid,
+	 	b.hr
+	   HAVING b.hr = MAX(b.hr))
+
+SELECT
+ 	a.playerid,
+	a.years,
+	b.hr,
+	c.career_high,
+	p.namefirst,
+	p.namelast,
+	b.yearid,
+	c.yearid
+FROM batting AS b
+INNER JOIN people AS p
+ON b.playerid = p.playerid
+INNER JOIN a
+ON a.playerid = p.playerid
+INNER JOIN c
+ON a.playerid = c.playerid
+WHERE b.yearid = 2016
+	AND b.yearid = c.yearid
+	AND b.hr >= 1
+GROUP BY 
+	a.playerid,
+	a.years,
+	b.hr,
+	c.career_high,
+	p.namefirst,
+	p.namelast,
+	b.yearid,
+	c.yearid
+ORDER BY c.career_high DESC; */
+
+
+/* 3rd Attempt */
+/*WITH a AS
+	(SELECT 
+		b.playerid,
+		(max(yearid) - min(yearid)) AS years
+	FROM batting AS b
+	GROUP BY b.playerid
+	HAVING (max(yearid) - min(yearid)) >10),
+
+c AS
+	(SELECT
+	 	b.playerid,
+		b.yearid,
+	 	b.hr,
+		MAX(b.hr) OVER(PARTITION BY b.playerid, b.yearid) AS career_high
+	  FROM batting AS b
+	  WHERE b.yearid = '2016'
+	  GROUP BY 
+	 	b.playerid,
+		b.yearid,
+	 	b.hr
+	   HAVING b.hr = MAX(b.hr))
+
+SELECT
+ 	a.playerid,
+	a.years,
+	b.hr,
+	c.career_high,
+	p.namefirst,
+	p.namelast,
+	b.yearid,
+	c.yearid
+FROM batting AS b
+INNER JOIN people AS p
+ON b.playerid = p.playerid
+INNER JOIN a
+ON a.playerid = p.playerid
+INNER JOIN c
+ON a.playerid = c.playerid
+WHERE b.yearid = 2016
+	AND b.yearid = c.yearid
+	AND b.hr >= 1
+GROUP BY 
+	a.playerid,
+	a.years,
+	b.hr,
+	c.career_high,
+	p.namefirst,
+	p.namelast,
+	b.yearid,
+	c.yearid
+ORDER BY c.career_high DESC; */
+
+/* Phil's Code */
+/*with homers as(
+	select playerid,
+	max(hr) as twentysixteenhr
+	from batting
+	where yearid = 2016
+	group by playerid)
+
+select b.playerid,
+	concat(p.namefirst, ' ', p.namelast) as namefull,
+	max(hr) as actualmaxhomers,
+	twentysixteenhr
+	from batting as b
+
+left join homers
+on b.playerid = homers.playerid
+inner join people as p
+on b.playerid = p.playerid
+where twentysixteenhr > 0
+group by b.playerid, twentysixteenhr, namefull
+having max(hr) = twentysixteenhr
+and max(yearid) - min(yearid) >= 10
+order by max(b.hr) desc */
